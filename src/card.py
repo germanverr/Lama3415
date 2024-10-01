@@ -37,7 +37,8 @@ class LlamaCard:
         return LlamaCard(value=int(text))
 
     def can_play_on(self, other: Self) -> bool:
-        # играть карту self на карту other
+        #Метод возвращает логическое значение, указывающее, можно ли сыграть текущую карту (self) на другую карту (other).
+
         if self.value == other.value or self.value == other.value + 1:
             return True
         if self.value == LlamaCard.LLAMA:
