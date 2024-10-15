@@ -20,13 +20,6 @@ class LlamaCard:
         return self.value == other.value
 
     def __lt__(self, other):
-        # порядок карт (1, 2, ..., 6, 0)
-        if self.value == other.value:
-            return False
-        if self.value == LlamaCard.LLAMA:
-            return False
-        if other.value == LlamaCard.LLAMA:
-            return True
         return self.value < other.value
 
     def save(self):
@@ -51,7 +44,7 @@ class LlamaCard:
     def all_cards():
         # создание всех возможных карт
         cards = [LlamaCard(value=val) for val in range(1, 7)]
-        cards.extend([LlamaCard(value=LlamaCard.LLAMA) for _ in range(8)])
+        cards=cards*8
         return cards
 
     def score(self, cards):
