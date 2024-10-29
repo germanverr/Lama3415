@@ -1,11 +1,9 @@
 import random
 import typing
-
 from src.card import LlamaCard
 
-
 class Deck:
-    def __init__(self, cards: None | list[LlamaCard]):
+    def __init__(self, cards: typing.Optional[list[LlamaCard]] = None):
         if cards is None:
             # создание новой колоды
             cards = LlamaCard.all_cards()
@@ -21,20 +19,28 @@ class Deck:
         return self.cards == other.cards
 
     def save(self) -> str:
+        """Сохраняет колоду в строковом формате."""
         scards = [c.save() for c in self.cards]
-        s = " ".join(scards)
-        return s
+        return " ".join(scards)
 
     @classmethod
     def load(cls, text: str) -> typing.Self:
+        """Загружает колоду из строкового формата."""
         cards = [LlamaCard.load(s) for s in text.split()]
         return cls(cards=cards)
 
-    def draw_card(self):
-        """Берем карту из колоды и возвращаем ее."""
+    def draw_card(self) -> LlamaCard:
+        """Берет карту из колоды и возвращает её. Если колода пуста, выбрасывает исключение."""
+        if not self.cards:
+            raise ValueError("Cannot draw from an empty deck.")
         return self.cards.pop()
 
     def shuffle(self):
+        """Перемешивает карты в колоде."""
         random.shuffle(self.cards)
+
+    def is_empty(self) -> bool:
+        """Проверяет, пуста ли колода."""
+        return len(self.cards) == 0
 
 
