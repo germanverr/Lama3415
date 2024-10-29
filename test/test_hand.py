@@ -1,6 +1,6 @@
 import random
-from card import LlamaCard
-from hand import Hand
+from src.card import LlamaCard
+from src.hand import Hand
 
 # Инициализация карт, включая карту Лама
 cards = [LlamaCard(3), LlamaCard(1), LlamaCard(6), LlamaCard(0)]  # 0 - карта Лама
