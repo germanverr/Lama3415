@@ -1,6 +1,6 @@
 from src.hand import Hand
 from src.player import Player
-from src.card import LlamaCard  # Импортируйте LlamaCard, если она в другом файле
+from src.card import LlamaCard
 
 def test_init():
     """Тестирование инициализации игрока."""
@@ -56,9 +56,11 @@ def test_hand_score():
     """Тестирование подсчета очков в руке игрока."""
     h = Hand.load("1 3 2")  # Предположим, что каждая карта имеет значение 1
     p = Player(name="Jordan", hand=h, score=10)
-    assert p.hand.score() == 6  # Проверяем, что сумма очков в руке равна 6
+    p.hand.add_card(LlamaCard.load("Lama"))  # Добавляем карту Лама
+    assert p.hand.score() == 16  # Проверяем, что сумма очков в руке равна 16 (3*1 + 10)
 
 def test_llama_card_score():
     """Тестирование подсчета очков карты Лама."""
     llama_card = LlamaCard.load("Lama")
-    assert llama_card.score() == 1  # Проверяем, что карта Лама дает 1 очко
+    assert llama_card.score() == 10  # Проверяем, что карта Лама дает 10 очков
+
