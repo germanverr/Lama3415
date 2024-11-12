@@ -43,8 +43,9 @@ class LlamaCard:
     @staticmethod
     def all_cards():
         # создание всех возможных карт
-        cards = [LlamaCard(value=val) for val in range(1, 7)]
-        cards=cards*8
+        cards = []
+        for val in LlamaCard.VALUES:
+            cards.extend([LlamaCard(value=val) for _ in range(8)])  # Создаем 8 карт для каждого значения
         return cards
 
     def score(self, cards):

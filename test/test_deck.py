@@ -20,6 +20,8 @@ def test_eq():
     deck1 = Deck([LlamaCard(0), LlamaCard(1)])
     deck2 = Deck([LlamaCard(1), LlamaCard(0)])
     assert deck1 == deck2  # Проверяем равенство колод
+    deck3 = Deck([LlamaCard(0)])
+    assert deck1 != deck3  # Проверяем, что неравные колоды не равны
 
 def test_save():
     deck = Deck([LlamaCard(0), LlamaCard(1)])
