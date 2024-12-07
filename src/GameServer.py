@@ -15,24 +15,29 @@ from src.ui.event import post_event, CustomEvent
 import logging
 import enum
 
+import pygame
+
+# Инициализация Pygame
+pygame.init()
 
 class GamePhase(enum.StrEnum):
-    # Перечисление для различных фаз игры
     CHOOSE_CARD = "Choose card"  # Фаза выбора карты
     DRAW_EXTRA = "Draw extra card"  # Фаза вытягивания дополнительной карты
     CHOOSE_CARD_AGAIN = "Choose card again"  # Фаза повторного выбора карты
     NEXT_PLAYER = "Switch current player"  # Фаза переключения на следующего игрока
+    DETERMINE_WINNER = "Determine the winner"  # Фаза определения победителя
     DECLARE_WINNER = "Declare a winner"  # Фаза объявления победителя
     GAME_END = "Game ended"  # Фаза окончания игры
 
-
 class GameServer:
     INITIAL_HAND_SIZE = 6
+    MAX_TURNS = 100  # Временное ограничение на количество ходов для отладки
 
     def __init__(self, player_types: Dict[Player, PlayerInteraction], game_state: GameState):
         self.game_state: GameState = game_state
         self.player_types: Dict[Player, PlayerInteraction] = player_types  # {player: PlayerInteractions}
         self.current_phase = GamePhase.CHOOSE_CARD  # Устанавливаем начальную фазу игры
+        self.turn_count = 0  # Счетчик ходов
 
     @classmethod
     def load_game(cls, filename: str | Path):
@@ -45,7 +50,7 @@ class GameServer:
             for player, player_data in zip(game_state.players, data['players']):
                 kind = player_data['kind']
                 kind = getattr(all_player_types, kind)
-                player_types[player] = kind
+                player_types[player] = kind(player.name)  # Создаем экземпляр класса
             return cls(player_types=player_types, game_state=game_state)
 
     def save(self, filename: str | Path):
@@ -59,9 +64,8 @@ class GameServer:
         data = self.game_state.save()
         for player_index, player in enumerate(self.player_types.keys()):
             player_interaction = self.player_types[player]
-            data['players'][player_index]['kind'] = self.player_types[player].__name__
+            data['players'][player_index]['kind'] = player_interaction.__class__.__name__
         return data
-
 
     @classmethod
     def new_game(cls, player_types: Dict[Player, PlayerInteraction]):
@@ -88,35 +92,44 @@ class GameServer:
             GamePhase.CHOOSE_CARD_AGAIN: self.choose_card_again_phase,
             GamePhase.DRAW_EXTRA: self.draw_extra_phase,
             GamePhase.NEXT_PLAYER: self.next_player_phase,
-            GamePhase.DECLARE_WINNER: self.declare_winner_phase,
+            GamePhase.DETERMINE_WINNER: self.determine_winner_phase,
+            GamePhase.DECLARE_WINNER: self.declare_winner_phase
         }
         self.current_phase = phases[self.current_phase]()
 
+    def determine_winner_phase(self) -> GamePhase:
+        # Фаза определения победителя
+        players = self.game_state.players
+        min_score = min(player.score for player in players)
+        winners = [player for player in players if player.score == min_score]
+
+        if len(winners) == 1:
+            self.game_state.current_player_index = players.index(winners[0])
+            return GamePhase.DECLARE_WINNER
+        else:
+            # В случае ничьей, можно выбрать первого из победителей
+            self.game_state.current_player_index = players.index(winners[0])
+            return GamePhase.DECLARE_WINNER
+
     def declare_winner_phase(self) -> GamePhase:
         # Фаза объявления победителя
-        print(f"{self.game_state.current_player()} is the winner!")
+        winner = self.game_state.current_player()
+        print(f"{winner.name} выиграл с результатом {winner.score}!")
         post_event(CustomEvent.DECLARE_WINNER, player_index=self.game_state.current_player_index)
         return GamePhase.GAME_END
 
     def next_player_phase(self) -> GamePhase:
         # Фаза переключения на следующего игрока
         if not self.game_state.current_player().hand.cards:
-            return GamePhase.DECLARE_WINNER
+            return GamePhase.DETERMINE_WINNER
         self.game_state.next_player()
-        print(f"=== {self.game_state.current_player()}'s turn")
+        print(f"=== {self.game_state.current_player().name}'s turn")
+
+        # Проверка счёта текущего игрока
+        if self.game_state.current_player().score >= 40:
+            return GamePhase.DETERMINE_WINNER
+
         return GamePhase.CHOOSE_CARD
-
-    def draw_extra_phase(self) -> GamePhase:
-        # Фаза вытягивания дополнительной карты
-        current_player = self.game_state.current_player()
-        card = self.game_state.draw_card()
-        print(f"Player {current_player} draws {card}")
-
-        # Передаем как текущего игрока, так и вытянутую карту
-        self.inform_all("inform_card_drawn", current_player, card)
-
-        post_event(CustomEvent.DRAW_CARD, card=card, player_index=self.game_state.current_player_index)
-        return GamePhase.CHOOSE_CARD_AGAIN
 
     def choose_card_again_phase(self) -> GamePhase:
         # Фаза выбора карты снова
@@ -124,7 +137,7 @@ class GameServer:
         playable_cards = current_player.hand.playable_cards(self.game_state.top)
         if playable_cards:
             card = playable_cards[0]  # Играть только вновь взятую карту
-            print(f"Player {current_player} can play drawn card")
+            print(f"Player {current_player.name} can play drawn card")
             if self.player_types[current_player].choose_to_play(self.game_state.top, card):
                 print(f"Player {current_player.name} played {card}")
                 current_player.hand.remove_card(card)
@@ -147,18 +160,44 @@ class GameServer:
             print(f"Player {current_player.name} could not play any card")
             return GamePhase.DRAW_EXTRA
 
-        card = self.player_types[current_player].choose_card(current_player.hand, self.game_state.top)
+        player_type = self.player_types[current_player]
+        card = player_type.choose_card(current_player.hand, self.game_state.top)
 
         if card is None:
             print(f"Player {current_player.name} skipped a turn")
             return GamePhase.DRAW_EXTRA
 
-        assert card in playable_cards
+        if card not in playable_cards:
+            print(f"Player {current_player.name} tried to play an invalid card: {card}")
+            return GamePhase.DRAW_EXTRA
+
         print(f"Player {current_player.name} played {card}")
         current_player.hand.remove_card(card)
         self.game_state.top = card
-        self.inform_all("inform_card_played", current_player, card)
+        player_type.inform_card_played(current_player, card)
         post_event(CustomEvent.PLAY_CARD, card=card, player_index=self.game_state.current_player_index)
+        return GamePhase.NEXT_PLAYER
+
+    def draw_extra_phase(self) -> GamePhase:
+        current_player = self.game_state.current_player()
+        drawn_card = self.game_state.draw_card()
+
+        if drawn_card is None:
+            print("Колода пуста, ход пропущен.")
+            return GamePhase.NEXT_PLAYER
+
+        self.player_types[current_player].inform_card_drawn(current_player, drawn_card)
+        current_player.hand.add_card(drawn_card)
+
+        if drawn_card.can_play_on(self.game_state.top):
+            if self.player_types[current_player].choose_to_play(self.game_state.top, drawn_card):
+                print(f"Player {current_player.name} played {drawn_card}")
+                current_player.hand.remove_card(drawn_card)
+                self.game_state.top = drawn_card
+                self.player_types[current_player].inform_card_played(current_player, drawn_card)
+                post_event(CustomEvent.PLAY_CARD, card=drawn_card, player_index=self.game_state.current_player_index)
+                return GamePhase.NEXT_PLAYER
+
         return GamePhase.NEXT_PLAYER
 
     def inform_all(self, method: str, *args, **kwargs):
@@ -209,7 +248,8 @@ class GameServer:
         names = cls.request_player_names(player_count)  # Передаем количество игроков
         for name in names:
             player = Player(name, Hand())
-            player_types[player] = cls.request_player_type()
+            player_type = cls.request_player_type()
+            player_types[player] = player_type(name)
         return player_types
 
 def __main__():
@@ -224,4 +264,3 @@ def __main__():
 
 if __name__ == "__main__":
     __main__()
-

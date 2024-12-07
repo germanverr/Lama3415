@@ -3,6 +3,7 @@ from typing import Self
 class LlamaCard:
     VALUES = list(range(1, 7)) + [0]  # возможные значения карт (1-6 и 0 для "Ламы")
     LLAMA = 0  # значение для карты "Лама"
+
     def __init__(self, value: int):
         """value (int): Номинальное значение карты."""
         # инициализация карты с проверкой значения
@@ -30,8 +31,6 @@ class LlamaCard:
         return LlamaCard(value=int(text))
 
     def can_play_on(self, other: Self) -> bool:
-        #Метод возвращает логическое значение, указывающее, можно ли сыграть текущую карту (self) на другую карту (other).
-
         if self.value == other.value or self.value == other.value + 1:
             return True
         if self.value == LlamaCard.LLAMA:

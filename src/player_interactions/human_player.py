@@ -1,21 +1,40 @@
-# src/player_interactions/human_player.py
+from src.card import LlamaCard
+from src.hand import Hand
+from src.player import Player
+from src.player_interaction import PlayerInteraction
 
-class Human:
-    def __init__(self, name):
+class Human(PlayerInteraction):
+    def __init__(self, name: str):
         self.name = name
-    def make_move(self, game_state):
-        move = input(f"{self.name}, введите ваш ход: ")
-        return move
 
-    def choose_card(self, hand, top_card):
-        print(f"Ваша рука: {hand}")
-        print(f"Верхняя карта: {top_card}")
-        card_index = int(input("Введите номер карты, которую хотите выбрать: "))
-        return hand.cards[card_index - 1]
+    def choose_card(self, hand: Hand, top_card: LlamaCard) -> LlamaCard | None:
+        playable_cards = hand.playable_cards(top_card)
+        if not playable_cards:
+            return None
 
-    def inform_card_drawn(self, card):
-        print(f"{self.name} вытянул карту: {card}")
+        print(f"Вы можете сыграть: {playable_cards}")
+        while True:
+            try:
+                choice = int(input("Введите номер карты, которую хотите выбрать: ")) - 1
+                if 0 <= choice < len(playable_cards):
+                    return playable_cards[choice]
+                else:
+                    print("Неверная карта. Попробуйте снова.")
+            except ValueError:
+                print("Пожалуйста, введите корректное число.")
 
-    def __str__(self):
-        return self.name
+    def choose_to_play(self, top_card: LlamaCard, card: LlamaCard) -> bool:
+        while True:
+            choice = input(f"Хотите ли вы сыграть карту {card}? (y/n): ").lower()
+            if choice == 'y':
+                return True
+            elif choice == 'n':
+                return False
+            else:
+                print("Пожалуйста, введите 'y' или 'n'.")
 
+    def inform_card_played(self, player: Player, card: LlamaCard):
+        print(f"{player.name} сыграл карту: {card}")
+
+    def inform_card_drawn(self, player: Player, card: LlamaCard):
+        print(f"{player.name} вытянул карту: {card}")

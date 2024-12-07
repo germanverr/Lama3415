@@ -40,3 +40,10 @@ class Player:
             hand=Hand.load(data["hand"]),  # Загружаем руку из строки
             score=int(data["score"])
         )
+    def add_score(self, points: int):
+        # Метод для добавления очков игроку
+        self.score += points
+
+    def remove_score(self, points: int):
+        # Метод для удаления очков у игрока
+        self.score = max(0, self.score - points)

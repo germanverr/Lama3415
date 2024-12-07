@@ -1,5 +1,5 @@
 import typing
-from card import LlamaCard
+from src.card import LlamaCard
 
 class Hand:
     def __init__(self, cards: list[LlamaCard] = None):
@@ -9,11 +9,7 @@ class Hand:
 
     def playable_cards(self, top_card: LlamaCard) -> list[LlamaCard]:
         """Возвращает список карт, которые можно сыграть на верхнюю карту."""
-        return [card for card in self.cards if self.can_play(card, top_card)]
-
-    def can_play(self, card: LlamaCard, top_card: LlamaCard) -> bool:
-        """Определяет, может ли карта быть сыграна на верхнюю карту."""
-        return card.value == top_card.value  # Убедитесь, что здесь логика соответствует правилам игры
+        return [card for card in self.cards if card.can_play_on(top_card)]
 
     def __repr__(self):
         return self.save()
