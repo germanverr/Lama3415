@@ -4,16 +4,16 @@
     "current_player_index": 0,
     "players": [
         {
-            "name": "frgve",
+            "name": "Петя",
             "hand": "6 6 3 5 1 5",
             "score": 0,
-            "kind": "Bot"
+            "kind": "Human"
         },
         {
-            "name": "rq",
+            "name": "Ваня",
             "hand": "4 5 3 3 2 6",
             "score": 0,
-            "kind": "Bot"
+            "kind": "Human"
         }
     ]
 }

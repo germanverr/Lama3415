@@ -3,7 +3,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Dict
-
+import os
 from src.deck import Deck
 from src.game_state import GameState
 from src.hand import Hand
@@ -49,8 +49,10 @@ class GameServer:
             # Создаем словарь игроков и их типов
             for player, player_data in zip(game_state.players, data['players']):
                 kind = player_data['kind']
-                kind = getattr(all_player_types, kind)
-                player_types[player] = kind(player.name)  # Создаем экземпляр класса
+                player_class = next((pt for pt in all_player_types if pt.__name__ == kind), None)
+                if player_class is None:
+                    raise ValueError(f"Unknown player type: {kind}")
+                player_types[player] = player_class(player.name)  # Создаем экземпляр класса
             return cls(player_types=player_types, game_state=game_state)
 
     def save(self, filename: str | Path):
@@ -252,15 +254,21 @@ class GameServer:
             player_types[player] = player_type(name)
         return player_types
 
+
 def __main__():
     # Главная функция для запуска игры
-    load_from_file = False
-    if load_from_file:
-        server = GameServer.load_game('lama.json')
+    save_file = 'lama.json'
+
+    if os.path.exists(save_file):
+        print("Загрузка игры из файла...")
+        server = GameServer.load_game(save_file)
     else:
+        print("Создание новой игры...")
         server = GameServer.new_game(GameServer.get_players())
-    server.save('lama.json')
+        server.save(save_file)
+
     server.run()
+
 
 if __name__ == "__main__":
     __main__()
