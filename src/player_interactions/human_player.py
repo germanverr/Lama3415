@@ -12,7 +12,7 @@ class Human(PlayerInteraction):
         if not playable_cards:
             return None
 
-        print(f"Вы можете сыграть: {playable_cards}")
+        print(f"Вы, {self.name} {hand} можете сыграть: {playable_cards} на {top_card}")
         while True:
             try:
                 choice = int(input("Введите номер карты, которую хотите выбрать: ")) - 1

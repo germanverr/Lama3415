@@ -47,3 +47,7 @@ class Hand:
     def score(self) -> int:
         """Возвращает сумму очков карт в руке."""
         return sum(c.score(self.cards) for c in self.cards)
+
+    def is_empty(self) -> bool:
+        """ Проверка, что рука пустая."""
+        return not self.cards

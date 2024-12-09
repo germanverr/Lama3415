@@ -25,6 +25,8 @@ class GamePhase(enum.StrEnum):
     DETERMINE_WINNER = "Determine the winner"  # Фаза определения победителя
     DECLARE_WINNER = "Declare a winner"  # Фаза объявления победителя
     GAME_END = "Game ended"  # Фаза окончания игры
+    BEGIN_ROUND = "Begin round" # начинаем раунд, раздаем карты
+    END_ROUND = "End round"     # конец раунда, подсчет очков
 
 
 # Класс для управления игровым процессом
@@ -52,7 +54,7 @@ class GameServer:
 
     def save(self, filename: str | Path):
         # Сохранение текущего состояния игры в файл
-        with open(filename, 'w') as fout:
+        with open(filename, 'w', encoding='utf-8') as fout:
             json.dump(self.save_to_dict(), fout, indent=4)
 
     def save_to_dict(self):
@@ -67,28 +69,60 @@ class GameServer:
         # Создание новой игры с заданными типами игроков
         deck = Deck()  # Создание колоды
         game_state = GameState(list(player_types.keys()), deck, deck.draw_card())  # Инициализация состояния игры
-        for _ in range(cls.INITIAL_HAND_SIZE):
-            for player in player_types.keys():
-                player.hand.add_card(deck.draw_card())  # Раздача карт игрокам
         return cls(player_types, game_state)
 
     def run(self):
         # Основной цикл игры
         print("=== Игра началась! ===")
-        while self.current_phase != GamePhase.GAME_END and self.turn_count < self.MAX_TURNS:
+        while self.current_phase != GamePhase.GAME_END:
             self.run_one_step()
+        '''
             self.turn_count += 1
         if self.turn_count >= self.MAX_TURNS:
             print("Достигнуто максимальное количество ходов. Определяем победителя.")
             self.determine_winner_phase()
+        '''
+
+    def round_begin(self):
+        """Начало раунда, раздача карт.
+        Если мы загрузились из json файла, нельзя раздавать карты, надо играть тем, что есть.
+        """
+        # если руки пустые игрока, то надо раздавать карты
+        current_player = self.game_state.current_player()
+        if current_player.hand.is_empty():
+            self.game_state.deal_cards()
+        return GamePhase.CHOOSE_CARD
+
+    def round_end(self):
+        """Конец раунда.
+        Считаем очки.
+        (?) избавляемся от очков если нет карт на руках.
+        Очищаем руки.
+        Из всех карт формируем колоду и перемешиваем ее.
+        """
+        # у каждого игрока
+        #    по его руке добавляем очки игроку
+        #    очищаем руку
+        # если у какого-то игрока 40 или больше очков, конец игры
+        #    return GamePhase.DETERMINE_WINNER
+
+        # делаем новую колоду и перемешиваем ее
+        self.game_state.deck = Deck()
+        self.game_state.deck.shuffle()
+        return GamePhase.BEGIN_ROUND
 
     def run_one_step(self):
         # Выполнение одного шага в зависимости от текущей фазы игры
         phases = {
-            GamePhase.CHOOSE_CARD: self.choose_card_phase,
-            GamePhase.CHOOSE_CARD_AGAIN: self.choose_card_again_phase,
-            GamePhase.DRAW_EXTRA: self.draw_extra_phase,
+            GamePhase.BEGIN_ROUND: self.round_begin,        # CHOOSE_CARD
+            GamePhase.CHOOSE_CARD: self.choose_card_phase,  # DRAW_EXTRA | NEXT_PLAYER
+            GamePhase.CHOOSE_CARD_AGAIN: self.choose_card_again_phase,  # NEXT_PLAYER
+            GamePhase.DRAW_EXTRA: self.draw_extra_phase,    # CHOOSE_CARD_AGAIN | NEXT_PLAYER
             GamePhase.NEXT_PLAYER: self.next_player_phase,
+                # CHOOSE_CARD (следующий игрок пытается играть)
+                # NEXT_PLAYER (этот игрок в состоянии quit и идем к следующему игроку)
+                # END_ROUND (все игроки в состоянии quit)
+            GamePhase.END_ROUND: self.round_end,            # BEGIN_ROUND, DETERMINE_WINNER
             GamePhase.DETERMINE_WINNER: self.determine_winner_phase,
             GamePhase.DECLARE_WINNER: self.declare_winner_phase
         }
@@ -121,8 +155,14 @@ class GameServer:
     def next_player_phase(self) -> GamePhase:
         # Фаза смены текущего игрока
         current_player = self.game_state.current_player()
+        # если все игроки в состоянии quit
+        #   return GamePhase.END_ROUND
+        # если текущий игрок в состоянии quit
+        #   return GamePhase.NEXT_PLAYER
+        # если дошли сюда, то текущий игрок успешно играл
         if not current_player.hand.cards:
-            return GamePhase.DETERMINE_WINNER  # Если у игрока нет карт, определяем победителя
+            return GamePhase.END_ROUND  # Если у игрока нет карт, определяем победителя
+
         self.game_state.next_player()  # Переход к следующему игроку
         print(f"\n=== Ход {self.game_state.current_player().name} ===")
         return GamePhase.CHOOSE_CARD  # Переход к фазе выбора карты
@@ -144,7 +184,7 @@ class GameServer:
         # Фаза выбора карты
         current_player = self.game_state.current_player()
         playable_cards = current_player.hand.playable_cards(self.game_state.top)
-        print(f"\nИгрок {current_player.name} может сыграть: {playable_cards} на {self.game_state.top}")
+        print(f"\nИгрок {current_player.name} {current_player.hand} может сыграть: {playable_cards} на {self.game_state.top}")
 
         if not playable_cards:
             print(f"Игрок {current_player.name} не может сыграть ни одной карты.")
