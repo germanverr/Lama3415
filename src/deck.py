@@ -43,4 +43,3 @@ class Deck:
         """Проверяет, пуста ли колода."""
         return len(self.cards) == 0
 
-

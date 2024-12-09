@@ -15,7 +15,6 @@ from src.player_interactions.init import all_player_types
 # Инициализация Pygame
 pygame.init()
 
-
 # Перечисление для различных фаз игры
 class GamePhase(enum.StrEnum):
     CHOOSE_CARD = "Choose card"  # Фаза выбора карты
@@ -27,7 +26,6 @@ class GamePhase(enum.StrEnum):
     GAME_END = "Game ended"  # Фаза окончания игры
     BEGIN_ROUND = "Begin round" # начинаем раунд, раздаем карты
     END_ROUND = "End round"     # конец раунда, подсчет очков
-
 
 # Класс для управления игровым процессом
 class GameServer:
@@ -137,14 +135,21 @@ class GameServer:
 
         # Проверка, если кто-то достиг 40 очков
         if any(player.score >= 40 for player in players):
-            # Определение победителя с наименьшим количеством очков
-            min_score = min(player.score for player in players)
-            winners = [player for player in players if player.score == min_score]
+            # Получаем игроков с очками менее 40
+            players_below_40 = [player for player in players if player.score < 40]
 
-            if winners:
-                return self.declare_winner_phase(winners[0])  # Объявление игрока с наименьшим счетом победителем
+            if players_below_40:  # Проверяем, есть ли такие игроки
+                min_score = min(player.score for player in players_below_40)  # Минимальный счет среди игроков с < 40
+                winners = [player for player in players_below_40 if
+                           player.score == min_score]  # Игроки с минимальным счетом
 
-        return GamePhase.GAME_END  # Если никто не достиг 40 очков, игра продолжается
+                if winners:
+                    return self.declare_winner_phase(winners[0])  # Объявление игрока с наименьшим счетом победителем
+
+        # Если никто не достиг 40 очков, определяем победителя по обычным правилам
+        min_score = min(player.score for player in players)  # Поиск минимального счета
+        winners = [player for player in players if player.score == min_score]
+        return self.declare_winner_phase(winners[0])  # Объявление победителя
 
     def declare_winner_phase(self, winner: Player) -> GamePhase:
         # Фаза объявления победителя
