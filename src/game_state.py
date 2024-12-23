@@ -4,12 +4,13 @@ from src.card import LlamaCard  # Импортируйте класс LlamaCard
 
 class GameState:
     def __init__(
-            self, players: list[Player], deck: Deck, top: LlamaCard, current_player: int = 0
+            self, players: list[Player], deck: Deck, top: LlamaCard, current_player: int = 0, is_loaded_from_json: bool = False
     ):
         self.players: list[Player] = players
         self.deck: Deck = deck
         self.top: LlamaCard = top
         self.__current_player: int = current_player
+        self.is_loaded_from_json: bool = is_loaded_from_json
 
     @property
     def current_player_index(self):   #Возвращает индекс текущего игрока
