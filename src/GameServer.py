@@ -182,6 +182,9 @@ class GameServer:
             if self.player_types[current_player].choose_to_play(self.game_state.top, card):
                 current_player.hand.remove_card(card)  # Удаление карты из руки
                 self.game_state.top = card  # Обновление верхней карты
+                print(f'Игрок {current_player.name} сыграл {card}')
+                print(f'Top: {self.game_state.top}')
+
                 self.inform_all("inform_card_played", current_player, card)
                 post_event(CustomEvent.PLAY_CARD, card=card, player_index=self.game_state.current_player_index)
         return GamePhase.NEXT_PLAYER
@@ -210,10 +213,8 @@ class GameServer:
         if card and card in playable_cards:
             current_player.hand.remove_card(card)  # Удаление карты из руки
             self.game_state.top = card  # Обновление верхней карты
-
-            # Начисление очков за сыгранную карту
-            current_player.score += self.calculate_points(card)  # Метод для подсчета очков
-
+            print(f'Игрок {current_player.name} сыграл {card}')
+            print(f'Top: {self.game_state.top}')
             self.player_types[current_player].inform_card_played(current_player, card)
             post_event(CustomEvent.PLAY_CARD, card=card, player_index=self.game_state.current_player_index)
         return GamePhase.NEXT_PLAYER
@@ -229,7 +230,6 @@ class GameServer:
             return GamePhase.NEXT_PLAYER
 
         self.player_types[current_player].inform_card_drawn(current_player, drawn_card)
-        current_player.hand.add_card(drawn_card)  # Добавление карты в руку игрока
         print(f"Игрок {current_player.name} вытянул карту: {drawn_card}")
         return GamePhase.CHOOSE_CARD_AGAIN
 

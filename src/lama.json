@@ -5,7 +5,7 @@
     "players": [
         {
             "name": "\u041a\u043e\u043b\u044f",
-            "hand": "6 0 1 6 1 5",
+            "hand": "4",
             "score": 0,
             "kind": "Bot"
         },
