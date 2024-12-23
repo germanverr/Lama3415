@@ -46,6 +46,7 @@ class GameState:
             deck=Deck.load(data["deck"]),
             top=LlamaCard.load(data["top"]),
             current_player=int(data["current_player_index"]),
+            is_loaded_from_json = True
         )
 
     def next_player(self): #Метод, который переходит к следующему игроку

@@ -1,6 +1,8 @@
 # src/player_interactions/ai_player.py
 
 import random
+from typing import List
+
 from src.player_interaction import PlayerInteraction
 from src.card import LlamaCard
 from src.hand import Hand
@@ -11,10 +13,10 @@ class Bot(PlayerInteraction):
         self.name = name
     @classmethod
     def choose_card(self, hand: Hand, top_card: LlamaCard) -> LlamaCard:
-        print(f"Player {self.name} with hand {hand} can play {hand.playable_cards(top_card)} on top of {top_card}")
+        print(f"Player with hand {hand} can play {hand.playable_cards(top_card)} on top of {top_card}")
         playable_cards = hand.playable_cards(top_card)
         if not playable_cards:
-            print(f"Player {self.name} could not play any card")
+            print(f"Player could not play any card")
             return None
         return playable_cards[0]  # Бот всегда играет первую доступную карту
 
@@ -32,3 +34,8 @@ class Bot(PlayerInteraction):
 
     def __str__(self):
         return "Bot"
+
+    @classmethod
+    def choose_quit(cls, hand: Hand, top: LlamaCard, hand_counts: List[int] | None = None) -> bool:
+        return False
+

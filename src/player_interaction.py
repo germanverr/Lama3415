@@ -21,6 +21,21 @@ class PlayerInteraction(ABC):
 
     @classmethod
     @abstractmethod
+    def choose_quit(
+            cls, hand: Hand, top: LlamaCard, hand_counts: List[int] | None = None
+    ) -> bool:
+        """
+        Запрашивает у игрока продолжать играть или закончить игру в раунде.
+        :param hand: Объект Hand, представляющий руки игрока.
+        :param top: Карта, находящаяся на вершине стека.
+        :param hand_counts: Список количества карт у других игроков (если нужно).
+        :return: True если заканчиваем раунд.
+        """
+        pass
+
+
+    @classmethod
+    @abstractmethod
     def choose_to_play(cls, top: LlamaCard, drawn: LlamaCard) -> bool:
         """
         Принимает решение играть или не играть взятую из колоды карту.
@@ -58,6 +73,12 @@ class ExamplePlayerInteraction(PlayerInteraction):
         chosen_card = playable_cards[0]
         print(f"Chose card: {chosen_card} from playable cards: {playable_cards}")
         return chosen_card
+
+    def choose_quit(
+            cls, hand: Hand, top: LlamaCard, hand_counts: List[int] | None = None
+    ) -> bool:
+        """Никогда не сдаемся и играем раунд, пока есть физическая возможность."""
+        return False
 
     @classmethod
     def choose_to_play(cls, top: LlamaCard, drawn: LlamaCard) -> bool:

@@ -8,6 +8,14 @@ class Player:
         self.name = name
         self.hand = hand
         self.score = score
+        self.__quit: bool = False   # игрок перестал ходить в этом раунде
+
+    @property
+    def quit(self):
+        return self.__quit
+    @quit.setter
+    def quit(self, value):
+        self.__quit = value
 
     def __str__(self):
         return f"{self.name}({self.score}): {self.hand}"
